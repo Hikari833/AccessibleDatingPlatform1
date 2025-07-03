@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ProfileCard } from '@/components/profile-card';
 import { MessageModal } from '@/components/message-modal';
-import { Search, Filter, Plus, Shield, UserCheck, AlertTriangle, Flag, ArrowRight } from 'lucide-react';
+import { Search, Filter, Plus, Shield, UserCheck, AlertTriangle, Flag, ArrowRight, Mic, MicOff } from 'lucide-react';
 import { ProfileWithUser } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 import { useAccessibilityContext } from '@/components/accessibility-provider';
@@ -103,19 +103,35 @@ export default function Home() {
                   <Label htmlFor="search-input" className="sr-only">
                     Search profiles
                   </Label>
-                  <div className="relative">
-                    <Input
-                      id="search-input"
-                      placeholder="Search by interests, location, or accessibility needs..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
-                      aria-describedby="search-help"
-                    />
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <div className="relative flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        id="search-input"
+                        placeholder="Search by interests, location, or accessibility needs..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10"
+                        aria-describedby="search-help"
+                      />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    </div>
+                    <Button
+                      variant={settings.voiceNav ? "default" : "outline"}
+                      size="sm"
+                      onClick={toggleVoiceNav}
+                      className="px-3 shrink-0"
+                      aria-label={settings.voiceNav ? "Disable voice navigation" : "Enable voice navigation"}
+                      title={settings.voiceNav ? "Voice navigation is ON" : "Voice navigation is OFF"}
+                    >
+                      {settings.voiceNav ? (
+                        <Mic className="w-4 h-4" />
+                      ) : (
+                        <MicOff className="w-4 h-4" />
+                      )}
+                    </Button>
                   </div>
                   <p id="search-help" className="text-xs text-muted-foreground mt-1">
-                    Use voice input by pressing Ctrl+Shift+V
+                    {settings.voiceNav ? 'Voice input enabled - say "search" followed by your query' : 'Click the mic button to enable voice input'}
                   </p>
                 </div>
                 <Button aria-label="Open accessibility filters">
