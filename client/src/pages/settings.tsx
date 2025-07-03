@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export default function Settings() {
-  const { settings, toggleHighContrast, increaseTextSize, toggleVoiceNav, toggleScreenReader } = useAccessibilityContext();
+  const { settings, toggleHighContrast, increaseTextSize, decreaseTextSize, setTextSize, toggleVoiceNav, toggleScreenReader } = useAccessibilityContext();
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
@@ -64,14 +64,39 @@ export default function Settings() {
                   Current size: {settings.textSize}
                 </p>
               </div>
-              <Button
-                variant="outline"
-                onClick={increaseTextSize}
-                className="flex items-center"
-              >
-                <Type className="w-4 h-4 mr-2" />
-                Adjust Size
-              </Button>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={decreaseTextSize}
+                  disabled={settings.textSize === 'normal'}
+                  aria-label="Decrease text size"
+                  size="sm"
+                >
+                  <Type className="w-3 h-3" />
+                  <span className="ml-1">-</span>
+                </Button>
+                <Select value={settings.textSize} onValueChange={setTextSize}>
+                  <SelectTrigger className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="large">Large</SelectItem>
+                    <SelectItem value="xl">X-Large</SelectItem>
+                    <SelectItem value="2xl">XX-Large</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  onClick={increaseTextSize}
+                  disabled={settings.textSize === '2xl'}
+                  aria-label="Increase text size"
+                  size="sm"
+                >
+                  <Type className="w-3 h-3" />
+                  <span className="ml-1">+</span>
+                </Button>
+              </div>
             </div>
 
             <Separator />

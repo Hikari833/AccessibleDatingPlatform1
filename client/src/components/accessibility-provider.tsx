@@ -5,6 +5,8 @@ interface AccessibilityContextValue {
   settings: AccessibilitySettings;
   toggleHighContrast: () => void;
   increaseTextSize: () => void;
+  decreaseTextSize: () => void;
+  setTextSize: (size: AccessibilitySettings['textSize']) => void;
   toggleVoiceNav: () => void;
   toggleScreenReader: () => void;
   announceToScreenReader: (message: string) => void;

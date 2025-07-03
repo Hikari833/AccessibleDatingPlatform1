@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { useAccessibilityContext } from '@/components/accessibility-provider';
-import { Diff, Type, Mic, Volume2 } from 'lucide-react';
+import { Diff, Type, Mic, Volume2, Plus, Minus } from 'lucide-react';
 
 export function AccessibilityToolbar() {
-  const { settings, toggleHighContrast, increaseTextSize, toggleVoiceNav, toggleScreenReader } = useAccessibilityContext();
+  const { settings, toggleHighContrast, increaseTextSize, decreaseTextSize, toggleVoiceNav, toggleScreenReader } = useAccessibilityContext();
 
   return (
     <div className="bg-gray-800 text-white py-2 px-4" role="banner" aria-label="Accessibility tools">
@@ -21,16 +21,27 @@ export function AccessibilityToolbar() {
             <Diff className="w-4 h-4 mr-1" />
             High Contrast
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={increaseTextSize}
-            className="text-white hover:text-accent-foreground hover:bg-accent"
-            aria-label={`Current text size: ${settings.textSize}. Click to increase`}
-          >
-            <Type className="w-4 h-4 mr-1" />
-            Text Size
-          </Button>
+          <div className="flex items-center space-x-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={decreaseTextSize}
+              className="text-white hover:text-accent-foreground hover:bg-accent px-2"
+              aria-label="Decrease text size"
+            >
+              <Minus className="w-3 h-3" />
+            </Button>
+            <span className="text-xs text-gray-300 px-1">{settings.textSize}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={increaseTextSize}
+              className="text-white hover:text-accent-foreground hover:bg-accent px-2"
+              aria-label="Increase text size"
+            >
+              <Plus className="w-3 h-3" />
+            </Button>
+          </div>
           <Button
             variant="ghost"
             size="sm"

@@ -56,8 +56,19 @@ export function useAccessibility() {
   const increaseTextSize = () => {
     const sizes: AccessibilitySettings['textSize'][] = ['normal', 'large', 'xl', '2xl'];
     const currentIndex = sizes.indexOf(settings.textSize);
-    const nextIndex = (currentIndex + 1) % sizes.length;
+    const nextIndex = Math.min(currentIndex + 1, sizes.length - 1);
     setSettings(prev => ({ ...prev, textSize: sizes[nextIndex] }));
+  };
+
+  const decreaseTextSize = () => {
+    const sizes: AccessibilitySettings['textSize'][] = ['normal', 'large', 'xl', '2xl'];
+    const currentIndex = sizes.indexOf(settings.textSize);
+    const nextIndex = Math.max(currentIndex - 1, 0);
+    setSettings(prev => ({ ...prev, textSize: sizes[nextIndex] }));
+  };
+
+  const setTextSize = (size: AccessibilitySettings['textSize']) => {
+    setSettings(prev => ({ ...prev, textSize: size }));
   };
 
   const toggleVoiceNav = () => {
@@ -88,6 +99,8 @@ export function useAccessibility() {
     settings,
     toggleHighContrast,
     increaseTextSize,
+    decreaseTextSize,
+    setTextSize,
     toggleVoiceNav,
     toggleScreenReader,
     announceToScreenReader,

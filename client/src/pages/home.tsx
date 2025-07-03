@@ -20,7 +20,7 @@ export default function Home() {
   const [selectedProfile, setSelectedProfile] = useState<ProfileWithUser | null>(null);
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const queryClient = useQueryClient();
-  const { settings, toggleHighContrast, toggleVoiceNav, toggleScreenReader, announceToScreenReader } = useAccessibilityContext();
+  const { settings, toggleHighContrast, increaseTextSize, decreaseTextSize, toggleVoiceNav, toggleScreenReader, announceToScreenReader } = useAccessibilityContext();
 
   // Fetch profiles
   const { data: profiles = [], isLoading } = useQuery({
