@@ -1,9 +1,30 @@
 import { 
-  users, profiles, matches, messages, likes, blocks, reports,
-  type User, type Profile, type Match, type Message, type Like, type Block, type Report,
-  type InsertUser, type InsertProfile, type InsertMessage, type InsertLike, type InsertBlock, type InsertReport,
-  type ProfileWithUser, type MessageWithSender, type MatchWithProfiles
+  User, 
+  Profile, 
+  Match, 
+  Message, 
+  Like, 
+  Block, 
+  Report,
+  InsertUser,
+  InsertProfile,
+  InsertMessage,
+  InsertLike,
+  InsertBlock,
+  InsertReport,
+  ProfileWithUser,
+  MessageWithSender,
+  MatchWithProfiles,
+  users,
+  profiles,
+  matches,
+  messages,
+  likes,
+  blocks,
+  reports
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, or, desc, ilike, ne } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -46,311 +67,308 @@ export interface IStorage {
   getReportsByUserId(userId: number): Promise<Report[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User> = new Map();
-  private profiles: Map<number, Profile> = new Map();
-  private matches: Map<number, Match> = new Map();
-  private messages: Map<number, Message> = new Map();
-  private likes: Map<number, Like> = new Map();
-  private blocks: Map<number, Block> = new Map();
-  private reports: Map<number, Report> = new Map();
-  
-  private currentUserId = 1;
-  private currentProfileId = 1;
-  private currentMatchId = 1;
-  private currentMessageId = 1;
-  private currentLikeId = 1;
-  private currentBlockId = 1;
-  private currentReportId = 1;
-
-  constructor() {
-    // Initialize with some sample data
-    this.initializeSampleData();
-  }
-
-  private initializeSampleData() {
-    // Create sample users
-    const user1: User = {
-      id: 1,
-      username: "alex_photos",
-      email: "alex@example.com",
-      password: "hashed_password",
-      createdAt: new Date(),
-    };
-    
-    const user2: User = {
-      id: 2,
-      username: "sarah_dev",
-      email: "sarah@example.com",
-      password: "hashed_password",
-      createdAt: new Date(),
-    };
-
-    this.users.set(1, user1);
-    this.users.set(2, user2);
-
-    // Create sample profiles
-    const profile1: Profile = {
-      id: 1,
-      userId: 1,
-      name: "Alex, 28",
-      age: 28,
-      location: "San Francisco, CA",
-      bio: "Photography enthusiast who loves hiking and exploring new places. I use a wheelchair and enjoy accessible outdoor activities. Looking for someone who shares my love for adventure and good conversations.",
-      interests: ["Photography", "Hiking", "Travel"],
-      disabilityType: "Mobility",
-      accessibilityNeeds: ["Wheelchair accessible venues", "Ground floor access"],
-      communicationPreferences: ["Text", "Voice calls"],
-      photos: ["https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d"],
-      isActive: true,
-      createdAt: new Date(),
-    };
-
-    const profile2: Profile = {
-      id: 2,
-      userId: 2,
-      name: "Sarah, 32",
-      age: 32,
-      location: "Oakland, CA",
-      bio: "Music lover and software developer. I'm hard of hearing and communicate through ASL and text. I enjoy concerts with good visual elements and love cooking new recipes. Looking for genuine connections.",
-      interests: ["Music", "Cooking", "Programming"],
-      disabilityType: "Hearing",
-      accessibilityNeeds: ["Visual alerts", "ASL interpretation"],
-      communicationPreferences: ["Text", "ASL", "Video calls"],
-      photos: ["https://images.unsplash.com/photo-1438761681033-6461ffad8d80"],
-      isActive: true,
-      createdAt: new Date(),
-    };
-
-    this.profiles.set(1, profile1);
-    this.profiles.set(2, profile2);
-
-    this.currentUserId = 3;
-    this.currentProfileId = 3;
-  }
-
-  // User operations
-  async createUser(user: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const newUser: User = {
-      ...user,
-      id,
-      createdAt: new Date(),
-    };
-    this.users.set(id, newUser);
-    return newUser;
+export class DatabaseStorage implements IStorage {
+  async createUser(userData: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .returning();
+    return user;
   }
 
   async getUserById(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
-  // Profile operations
-  async createProfile(profile: InsertProfile): Promise<Profile> {
-    const id = this.currentProfileId++;
-    const newProfile: Profile = {
-      ...profile,
-      id,
-      createdAt: new Date(),
-    };
-    this.profiles.set(id, newProfile);
-    return newProfile;
+  async createProfile(profileData: InsertProfile): Promise<Profile> {
+    const [profile] = await db
+      .insert(profiles)
+      .values({
+        ...profileData,
+        interests: profileData.interests || [],
+        accessibilityNeeds: profileData.accessibilityNeeds || [],
+        communicationPreferences: profileData.communicationPreferences || [],
+        photos: profileData.photos || [],
+        isActive: profileData.isActive ?? true
+      })
+      .returning();
+    return profile;
   }
 
   async getProfileById(id: number): Promise<Profile | undefined> {
-    return this.profiles.get(id);
+    const [profile] = await db.select().from(profiles).where(eq(profiles.id, id));
+    return profile || undefined;
   }
 
   async getProfileByUserId(userId: number): Promise<Profile | undefined> {
-    return Array.from(this.profiles.values()).find(profile => profile.userId === userId);
+    const [profile] = await db.select().from(profiles).where(eq(profiles.userId, userId));
+    return profile || undefined;
   }
 
   async updateProfile(id: number, profileData: Partial<InsertProfile>): Promise<Profile | undefined> {
-    const profile = this.profiles.get(id);
-    if (!profile) return undefined;
-    
-    const updatedProfile = { ...profile, ...profileData };
-    this.profiles.set(id, updatedProfile);
-    return updatedProfile;
+    const [profile] = await db
+      .update(profiles)
+      .set(profileData)
+      .where(eq(profiles.id, id))
+      .returning();
+    return profile || undefined;
   }
 
   async getProfiles(excludeUserId?: number): Promise<ProfileWithUser[]> {
-    const profilesArray = Array.from(this.profiles.values());
-    const filtered = excludeUserId 
-      ? profilesArray.filter(profile => profile.userId !== excludeUserId)
-      : profilesArray;
-    
-    return filtered.map(profile => ({
-      ...profile,
-      user: this.users.get(profile.userId)!,
-    }));
+    const query = db
+      .select({
+        id: profiles.id,
+        name: profiles.name,
+        userId: profiles.userId,
+        createdAt: profiles.createdAt,
+        age: profiles.age,
+        location: profiles.location,
+        bio: profiles.bio,
+        interests: profiles.interests,
+        disabilityType: profiles.disabilityType,
+        accessibilityNeeds: profiles.accessibilityNeeds,
+        communicationPreferences: profiles.communicationPreferences,
+        photos: profiles.photos,
+        isActive: profiles.isActive,
+        user: users
+      })
+      .from(profiles)
+      .innerJoin(users, eq(profiles.userId, users.id))
+      .where(excludeUserId ? and(eq(profiles.isActive, true), ne(users.id, excludeUserId)) : eq(profiles.isActive, true))
+      .orderBy(desc(profiles.createdAt));
+
+    return await query;
   }
 
   async searchProfiles(query: string, excludeUserId?: number): Promise<ProfileWithUser[]> {
-    const profiles = await this.getProfiles(excludeUserId);
-    const lowerQuery = query.toLowerCase();
-    
-    return profiles.filter(profile => 
-      profile.name.toLowerCase().includes(lowerQuery) ||
-      profile.bio.toLowerCase().includes(lowerQuery) ||
-      profile.location.toLowerCase().includes(lowerQuery) ||
-      profile.interests.some(interest => interest.toLowerCase().includes(lowerQuery)) ||
-      profile.accessibilityNeeds.some(need => need.toLowerCase().includes(lowerQuery))
-    );
+    const searchQuery = db
+      .select({
+        id: profiles.id,
+        name: profiles.name,
+        userId: profiles.userId,
+        createdAt: profiles.createdAt,
+        age: profiles.age,
+        location: profiles.location,
+        bio: profiles.bio,
+        interests: profiles.interests,
+        disabilityType: profiles.disabilityType,
+        accessibilityNeeds: profiles.accessibilityNeeds,
+        communicationPreferences: profiles.communicationPreferences,
+        photos: profiles.photos,
+        isActive: profiles.isActive,
+        user: users
+      })
+      .from(profiles)
+      .innerJoin(users, eq(profiles.userId, users.id))
+      .where(
+        and(
+          eq(profiles.isActive, true),
+          excludeUserId ? eq(users.id, excludeUserId) : undefined,
+          or(
+            ilike(profiles.name, `%${query}%`),
+            ilike(profiles.bio, `%${query}%`),
+            ilike(profiles.location, `%${query}%`)
+          )
+        )
+      )
+      .orderBy(desc(profiles.createdAt));
+
+    return await searchQuery;
   }
 
-  // Match operations
   async createMatch(userId1: number, userId2: number): Promise<Match> {
-    const id = this.currentMatchId++;
-    const match: Match = {
-      id,
-      userId1,
-      userId2,
-      matchedAt: new Date(),
-      isActive: true,
-    };
-    this.matches.set(id, match);
+    const [match] = await db
+      .insert(matches)
+      .values({ userId1, userId2 })
+      .returning();
     return match;
   }
 
   async getMatchesByUserId(userId: number): Promise<MatchWithProfiles[]> {
-    const matches = Array.from(this.matches.values()).filter(
-      match => match.userId1 === userId || match.userId2 === userId
-    );
+    const userMatches = await db
+      .select()
+      .from(matches)
+      .where(or(eq(matches.userId1, userId), eq(matches.userId2, userId)));
+
+    const matchWithProfiles: MatchWithProfiles[] = [];
     
-    return matches.map(match => {
-      const otherUserId = match.userId1 === userId ? match.userId2 : match.userId1;
-      const profile1 = this.profiles.get(match.userId1);
-      const profile2 = this.profiles.get(match.userId2);
-      const user1 = this.users.get(match.userId1);
-      const user2 = this.users.get(match.userId2);
-      
-      return {
-        ...match,
-        profile1: { ...profile1!, user: user1! },
-        profile2: { ...profile2!, user: user2! },
-      };
-    });
+    for (const match of userMatches) {
+      const profile1 = await this.getProfileByUserId(match.userId1);
+      const profile2 = await this.getProfileByUserId(match.userId2);
+      const user1 = await this.getUserById(match.userId1);
+      const user2 = await this.getUserById(match.userId2);
+
+      if (profile1 && profile2 && user1 && user2) {
+        matchWithProfiles.push({
+          id: match.id,
+          userId1: match.userId1,
+          userId2: match.userId2,
+          matchedAt: match.matchedAt,
+          isActive: match.isActive,
+          profile1: { ...profile1, user: user1 },
+          profile2: { ...profile2, user: user2 }
+        });
+      }
+    }
+
+    return matchWithProfiles;
   }
 
   async checkMatch(userId1: number, userId2: number): Promise<Match | undefined> {
-    return Array.from(this.matches.values()).find(
-      match => 
-        (match.userId1 === userId1 && match.userId2 === userId2) ||
-        (match.userId1 === userId2 && match.userId2 === userId1)
-    );
+    const [match] = await db
+      .select()
+      .from(matches)
+      .where(
+        or(
+          and(eq(matches.userId1, userId1), eq(matches.userId2, userId2)),
+          and(eq(matches.userId1, userId2), eq(matches.userId2, userId1))
+        )
+      );
+    return match || undefined;
   }
 
-  // Message operations
-  async createMessage(message: InsertMessage): Promise<Message> {
-    const id = this.currentMessageId++;
-    const newMessage: Message = {
-      ...message,
-      id,
-      sentAt: new Date(),
-    };
-    this.messages.set(id, newMessage);
-    return newMessage;
+  async createMessage(messageData: InsertMessage): Promise<Message> {
+    const [message] = await db
+      .insert(messages)
+      .values({
+        ...messageData,
+        messageType: messageData.messageType || 'text',
+        isRead: messageData.isRead ?? false
+      })
+      .returning();
+    return message;
   }
 
   async getMessagesBetweenUsers(userId1: number, userId2: number): Promise<MessageWithSender[]> {
-    const messages = Array.from(this.messages.values()).filter(
-      message => 
-        (message.senderId === userId1 && message.receiverId === userId2) ||
-        (message.senderId === userId2 && message.receiverId === userId1)
-    );
-    
-    return messages.map(message => ({
-      ...message,
-      sender: this.users.get(message.senderId)!,
-    }));
+    const messagesData = await db
+      .select({
+        id: messages.id,
+        content: messages.content,
+        senderId: messages.senderId,
+        receiverId: messages.receiverId,
+        messageType: messages.messageType,
+        isRead: messages.isRead,
+        sentAt: messages.sentAt,
+        sender: users
+      })
+      .from(messages)
+      .innerJoin(users, eq(messages.senderId, users.id))
+      .where(
+        or(
+          and(eq(messages.senderId, userId1), eq(messages.receiverId, userId2)),
+          and(eq(messages.senderId, userId2), eq(messages.receiverId, userId1))
+        )
+      )
+      .orderBy(desc(messages.sentAt));
+
+    return messagesData;
   }
 
   async getConversationsByUserId(userId: number): Promise<MessageWithSender[]> {
-    const messages = Array.from(this.messages.values()).filter(
-      message => message.senderId === userId || message.receiverId === userId
-    );
-    
-    return messages.map(message => ({
-      ...message,
-      sender: this.users.get(message.senderId)!,
-    }));
+    const messagesData = await db
+      .select({
+        id: messages.id,
+        content: messages.content,
+        senderId: messages.senderId,
+        receiverId: messages.receiverId,
+        messageType: messages.messageType,
+        isRead: messages.isRead,
+        sentAt: messages.sentAt,
+        sender: users
+      })
+      .from(messages)
+      .innerJoin(users, eq(messages.senderId, users.id))
+      .where(or(eq(messages.senderId, userId), eq(messages.receiverId, userId)))
+      .orderBy(desc(messages.sentAt));
+
+    return messagesData;
   }
 
   async markMessageAsRead(messageId: number): Promise<void> {
-    const message = this.messages.get(messageId);
-    if (message) {
-      this.messages.set(messageId, { ...message, isRead: true });
-    }
+    await db
+      .update(messages)
+      .set({ isRead: true })
+      .where(eq(messages.id, messageId));
   }
 
-  // Like operations
-  async createLike(like: InsertLike): Promise<Like> {
-    const id = this.currentLikeId++;
-    const newLike: Like = {
-      ...like,
-      id,
-      createdAt: new Date(),
-    };
-    this.likes.set(id, newLike);
-    return newLike;
+  async createLike(likeData: InsertLike): Promise<Like> {
+    const [like] = await db
+      .insert(likes)
+      .values(likeData)
+      .returning();
+    return like;
   }
 
   async getLikesByUserId(userId: number): Promise<Like[]> {
-    return Array.from(this.likes.values()).filter(like => like.senderId === userId);
+    return await db
+      .select()
+      .from(likes)
+      .where(eq(likes.senderId, userId));
   }
 
   async checkLike(senderId: number, receiverId: number): Promise<Like | undefined> {
-    return Array.from(this.likes.values()).find(
-      like => like.senderId === senderId && like.receiverId === receiverId
-    );
+    const [like] = await db
+      .select()
+      .from(likes)
+      .where(and(eq(likes.senderId, senderId), eq(likes.receiverId, receiverId)));
+    return like || undefined;
   }
 
-  // Block operations
-  async createBlock(block: InsertBlock): Promise<Block> {
-    const id = this.currentBlockId++;
-    const newBlock: Block = {
-      ...block,
-      id,
-      createdAt: new Date(),
-    };
-    this.blocks.set(id, newBlock);
-    return newBlock;
+  async createBlock(blockData: InsertBlock): Promise<Block> {
+    const [block] = await db
+      .insert(blocks)
+      .values({
+        ...blockData,
+        reason: blockData.reason || null
+      })
+      .returning();
+    return block;
   }
 
   async getBlocksByUserId(userId: number): Promise<Block[]> {
-    return Array.from(this.blocks.values()).filter(block => block.blockerId === userId);
+    return await db
+      .select()
+      .from(blocks)
+      .where(eq(blocks.blockerId, userId));
   }
 
   async checkBlock(blockerId: number, blockedId: number): Promise<Block | undefined> {
-    return Array.from(this.blocks.values()).find(
-      block => block.blockerId === blockerId && block.blockedId === blockedId
-    );
+    const [block] = await db
+      .select()
+      .from(blocks)
+      .where(and(eq(blocks.blockerId, blockerId), eq(blocks.blockedId, blockedId)));
+    return block || undefined;
   }
 
-  // Report operations
-  async createReport(report: InsertReport): Promise<Report> {
-    const id = this.currentReportId++;
-    const newReport: Report = {
-      ...report,
-      id,
-      createdAt: new Date(),
-    };
-    this.reports.set(id, newReport);
-    return newReport;
+  async createReport(reportData: InsertReport): Promise<Report> {
+    const [report] = await db
+      .insert(reports)
+      .values({
+        ...reportData,
+        status: reportData.status || 'pending',
+        description: reportData.description || null
+      })
+      .returning();
+    return report;
   }
 
   async getReportsByUserId(userId: number): Promise<Report[]> {
-    return Array.from(this.reports.values()).filter(report => report.reporterId === userId);
+    return await db
+      .select()
+      .from(reports)
+      .where(eq(reports.reporterId, userId));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

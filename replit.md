@@ -101,7 +101,9 @@ AccessLove is a modern, inclusive dating platform specifically designed with acc
 
 ```
 Changelog:
-- July 03, 2025. Initial setup
+- July 03, 2025: Initial setup with in-memory storage
+- July 03, 2025: Added PostgreSQL database integration, replaced MemStorage with DatabaseStorage
+- July 03, 2025: Enhanced text size controls with increase/decrease buttons and dropdown selector
 ```
 
 ## User Preferences
